@@ -7,40 +7,23 @@
   };
 
   outputs =
-    {
-      nixpkgs,
-      ...
-    }@inputs:
+    inputs:
     let
-      inherit (nixpkgs) lib;
+      inherit (inputs.nixpkgs) lib;
 
       forAllSystems =
-        function: lib.genAttrs lib.systems.flakeExposed (system: function nixpkgs.legacyPackages.${system});
-      callPackage =
-        pkgs: args:
-        pkgs.callPackage args {
-          evergarden-whiskers =
-            inputs.evergarden-whiskers.packages.${pkgs.stdenv.hostPlatform.system}.default;
-        } { };
+        function:
+        lib.genAttrs lib.systems.flakeExposed (system: function inputs.nixpkgs.legacyPackages.${system});
     in
     {
       devShells = forAllSystems (pkgs: {
-        default = callPackage pkgs (
-          {
-            mkShellNoCC,
-            just,
-            evergarden-whiskers,
-            catppuccin-catwalk,
-            ...
-          }:
-          mkShellNoCC {
-            packages = [
-              just
-              evergarden-whiskers
-              catppuccin-catwalk
-            ];
-          }
-        );
+        default = pkgs.mkShellNoCC {
+          packages = with pkgs; [
+            just
+            catppuccin-catwalk
+            inputs.evergarden-whiskers.packages.${pkgs.stdenv.hostPlatform.system}.default
+          ];
+        };
       });
     };
 }
